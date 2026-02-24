@@ -1,0 +1,24 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: Backend service untuk konsumsi API dan Dashboard Analitik.
+  title: API Analitik Publik
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Endpoint untuk memastikan backend berjalan lancar
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cek Status Server
+      tags:
+      - System
+swagger: "2.0"
