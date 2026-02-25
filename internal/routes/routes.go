@@ -1,23 +1,22 @@
 package routes
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/swaggo/http-swagger"
-	_ "github.com/username/project-name/docs" // Ganti dengan path modul Anda
-	"github.com/username/project-name/internal/handler"
+	"net/http"
+
+	httpSwagger "github.com/swaggo/http-swagger"
+	_ "project-telkom-sigma/docs" // ⚠️ WAJIB untuk register swagger
 )
 
-func NewRouter() *chi.Mux {
-	r := chi.NewRouter()
+func NewRouter() http.Handler {
+	mux := http.NewServeMux()
 
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	// Swagger endpoint
+	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
-	r.Get("/health", handler.HealthCheck)
-	
-	// Integrasi Swagger UI
-	r.Get("/swagger/*", httpSwagger.WrapHandler)
+	// contoh endpoint lain
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"status":"ok"}`))
+	})
 
-	return r
+	return mux
 }
