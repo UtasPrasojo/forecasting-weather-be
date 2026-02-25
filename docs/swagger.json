@@ -9,6 +9,383 @@
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
+        "/api/activity": {
+            "get": {
+                "description": "Mengambil semua daftar kegiatan dengan fitur pencarian dan pengurutan",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity"
+                ],
+                "summary": "Daftar Semua Kegiatan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cari berdasarkan nama atau status cuaca",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Kolom pengurutan (contoh: activity_date, name)",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Urutan data (asc/desc)",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Activity"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Membuat rencana kegiatan baru dan otomatis mencocokkan status cuaca berdasarkan data BMKG yang tersedia",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity"
+                ],
+                "summary": "Buat Rencana Kegiatan",
+                "parameters": [
+                    {
+                        "description": "Data JSON Kegiatan",
+                        "name": "activity",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Activity"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Activity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/activity/delete": {
+            "delete": {
+                "description": "Menghapus data kegiatan berdasarkan ID",
+                "tags": [
+                    "Activity"
+                ],
+                "summary": "Hapus Kegiatan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Kegiatan",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/activity/update": {
+            "put": {
+                "description": "Mengubah data kegiatan dan memperbarui status cuaca secara otomatis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity"
+                ],
+                "summary": "Perbarui Kegiatan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Kegiatan yang akan diubah",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Data JSON Kegiatan baru",
+                        "name": "activity",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Activity"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Activity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/weather": {
+            "get": {
+                "description": "Mengambil semua data cuaca yang telah di-sync, diurutkan berdasarkan waktu sinkronisasi terbaru",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Weather"
+                ],
+                "summary": "Daftar Semua Data Cuaca",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Weather"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/weather/dashboard": {
+            "get": {
+                "description": "Mengambil data agregasi untuk Pie Chart (Kategori) dan Column Chart (Suhu Harian)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Data Statistik Dashboard",
+                "responses": {
+                    "200": {
+                        "description": "Contoh: {pie_chart: [], column_chart: []}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/weather/delete": {
+            "delete": {
+                "tags": [
+                    "Weather"
+                ],
+                "summary": "Hapus Data Cuaca",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Weather",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/weather/detail": {
+            "get": {
+                "tags": [
+                    "Weather"
+                ],
+                "summary": "Detail Data Cuaca",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Weather",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/weather/sync": {
+            "post": {
+                "description": "Mengambil data cuaca dari API BMKG berdasarkan kode wilayah (adm4) dan menyimpannya ke database",
+                "tags": [
+                    "Weather"
+                ],
+                "summary": "Sinkronisasi Data BMKG",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Kode Wilayah (contoh: 31.71.01.1001)",
+                        "name": "adm4",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/weather/update": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Weather"
+                ],
+                "summary": "Update Data Cuaca",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Weather",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Data Weather",
+                        "name": "weather",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Weather"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Endpoint untuk memastikan backend berjalan lancar",
@@ -29,6 +406,101 @@
                             }
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.Activity": {
+            "type": "object",
+            "properties": {
+                "activity_date": {
+                    "description": "Tanggal dan Jam kegiatan",
+                    "type": "string"
+                },
+                "area_code": {
+                    "description": "Relasi ke Wilayah.Code (adm4)",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "Nama kegiatan (misal: \"Meeting Telkom\")",
+                    "type": "string"
+                },
+                "sync_time": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "weather_status": {
+                    "description": "Akan diisi otomatis oleh sistem",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Weather": {
+            "type": "object",
+            "properties": {
+                "analysis_date": {
+                    "type": "string"
+                },
+                "areaCode": {
+                    "type": "string"
+                },
+                "category": {
+                    "description": "Kriteria Tugas: Kategori \u0026 Sync Time",
+                    "type": "string"
+                },
+                "hu": {
+                    "description": "Kelembapan",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "local_datetime": {
+                    "type": "string"
+                },
+                "sync_time": {
+                    "description": "Kapan kita menembak API",
+                    "type": "string"
+                },
+                "t": {
+                    "description": "Data Cuaca (sesuai parameter BMKG)",
+                    "type": "number"
+                },
+                "tcc": {
+                    "description": "Tutupan Awan",
+                    "type": "integer"
+                },
+                "utcDatetime": {
+                    "type": "string"
+                },
+                "vs_text": {
+                    "description": "Jarak Pandang",
+                    "type": "string"
+                },
+                "wd": {
+                    "description": "Arah Angin",
+                    "type": "string"
+                },
+                "weather_desc": {
+                    "description": "Kondisi (Indo)",
+                    "type": "string"
+                },
+                "weather_desc_en": {
+                    "description": "Kondisi (English)",
+                    "type": "string"
+                },
+                "ws": {
+                    "description": "Kecepatan Angin",
+                    "type": "number"
                 }
             }
         }

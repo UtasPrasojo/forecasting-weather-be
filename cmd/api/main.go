@@ -6,7 +6,7 @@ import (
 	"project-telkom-sigma/internal/configs"
 	"project-telkom-sigma/internal/database"
 	"project-telkom-sigma/internal/routes"
-	
+	_ "project-telkom-sigma/docs"
 )
 
 // @title           API Analitik Publik
@@ -23,9 +23,8 @@ func main() {
 
 	// ✅ INIT DATABASE DULU
 	database.InitDB(setting)
-	database.SeedWilayah("./internal/migration/wilayah.csv")
-
-	router := routes.NewRouter()
+	// database.SeedWilayah("./internal/migration/wilayah.csv")
+	router := routes.SetupRoutes()
 
 	log.Println("Server mulai di port :8080")
 	log.Println("Dokumentasi Swagger dapat diakses di: http://localhost:8080/swagger/index.html")

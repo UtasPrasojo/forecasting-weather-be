@@ -1,4 +1,71 @@
 basePath: /
+definitions:
+  models.Activity:
+    properties:
+      activity_date:
+        description: Tanggal dan Jam kegiatan
+        type: string
+      area_code:
+        description: Relasi ke Wilayah.Code (adm4)
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        description: 'Nama kegiatan (misal: "Meeting Telkom")'
+        type: string
+      sync_time:
+        type: string
+      updated_at:
+        type: string
+      weather_status:
+        description: Akan diisi otomatis oleh sistem
+        type: string
+    type: object
+  models.Weather:
+    properties:
+      analysis_date:
+        type: string
+      areaCode:
+        type: string
+      category:
+        description: 'Kriteria Tugas: Kategori & Sync Time'
+        type: string
+      hu:
+        description: Kelembapan
+        type: integer
+      id:
+        type: integer
+      local_datetime:
+        type: string
+      sync_time:
+        description: Kapan kita menembak API
+        type: string
+      t:
+        description: Data Cuaca (sesuai parameter BMKG)
+        type: number
+      tcc:
+        description: Tutupan Awan
+        type: integer
+      utcDatetime:
+        type: string
+      vs_text:
+        description: Jarak Pandang
+        type: string
+      wd:
+        description: Arah Angin
+        type: string
+      weather_desc:
+        description: Kondisi (Indo)
+        type: string
+      weather_desc_en:
+        description: Kondisi (English)
+        type: string
+      ws:
+        description: Kecepatan Angin
+        type: number
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -6,6 +73,257 @@ info:
   title: API Analitik Publik
   version: "1.0"
 paths:
+  /api/activity:
+    get:
+      description: Mengambil semua daftar kegiatan dengan fitur pencarian dan pengurutan
+      parameters:
+      - description: Cari berdasarkan nama atau status cuaca
+        in: query
+        name: search
+        type: string
+      - description: 'Kolom pengurutan (contoh: activity_date, name)'
+        in: query
+        name: sort_by
+        type: string
+      - description: Urutan data (asc/desc)
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Activity'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Daftar Semua Kegiatan
+      tags:
+      - Activity
+    post:
+      consumes:
+      - application/json
+      description: Membuat rencana kegiatan baru dan otomatis mencocokkan status cuaca
+        berdasarkan data BMKG yang tersedia
+      parameters:
+      - description: Data JSON Kegiatan
+        in: body
+        name: activity
+        required: true
+        schema:
+          $ref: '#/definitions/models.Activity'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Activity'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Buat Rencana Kegiatan
+      tags:
+      - Activity
+  /api/activity/delete:
+    delete:
+      description: Menghapus data kegiatan berdasarkan ID
+      parameters:
+      - description: ID Kegiatan
+        in: query
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Hapus Kegiatan
+      tags:
+      - Activity
+  /api/activity/update:
+    put:
+      consumes:
+      - application/json
+      description: Mengubah data kegiatan dan memperbarui status cuaca secara otomatis
+      parameters:
+      - description: ID Kegiatan yang akan diubah
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Data JSON Kegiatan baru
+        in: body
+        name: activity
+        required: true
+        schema:
+          $ref: '#/definitions/models.Activity'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Activity'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Perbarui Kegiatan
+      tags:
+      - Activity
+  /api/weather:
+    get:
+      description: Mengambil semua data cuaca yang telah di-sync, diurutkan berdasarkan
+        waktu sinkronisasi terbaru
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Weather'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Daftar Semua Data Cuaca
+      tags:
+      - Weather
+  /api/weather/dashboard:
+    get:
+      description: Mengambil data agregasi untuk Pie Chart (Kategori) dan Column Chart
+        (Suhu Harian)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Contoh: {pie_chart: [], column_chart: []}'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Data Statistik Dashboard
+      tags:
+      - Dashboard
+  /api/weather/delete:
+    delete:
+      parameters:
+      - description: ID Weather
+        in: query
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Hapus Data Cuaca
+      tags:
+      - Weather
+  /api/weather/detail:
+    get:
+      parameters:
+      - description: ID Weather
+        in: query
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Detail Data Cuaca
+      tags:
+      - Weather
+  /api/weather/sync:
+    post:
+      description: Mengambil data cuaca dari API BMKG berdasarkan kode wilayah (adm4)
+        dan menyimpannya ke database
+      parameters:
+      - description: 'Kode Wilayah (contoh: 31.71.01.1001)'
+        in: query
+        name: adm4
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Sinkronisasi Data BMKG
+      tags:
+      - Weather
+  /api/weather/update:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Weather
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Data Weather
+        in: body
+        name: weather
+        required: true
+        schema:
+          $ref: '#/definitions/models.Weather'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update Data Cuaca
+      tags:
+      - Weather
   /health:
     get:
       description: Endpoint untuk memastikan backend berjalan lancar
