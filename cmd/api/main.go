@@ -23,6 +23,7 @@ func main() {
 
 	// ✅ INIT DATABASE DULU
 	database.InitDB(setting)
+	database.SeedWilayah("./internal/migration/wilayah.csv")
 
 	router := routes.NewRouter()
 
