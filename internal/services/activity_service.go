@@ -47,7 +47,6 @@ func (s *activityService) UpdateActivity(id string, input *models.Activity) (*mo
 	activity.AreaCode = input.AreaCode
 	activity.ActivityDate = input.ActivityDate
 
-	// Sekarang parameter ini sudah sesuai tipe datanya (time.Time)
 	activity.WeatherStatus = s.getWeatherStatus(activity.AreaCode, activity.ActivityDate)
 
 	if err := s.db.Save(&activity).Error; err != nil {
@@ -56,11 +55,9 @@ func (s *activityService) UpdateActivity(id string, input *models.Activity) (*mo
 	return &activity, nil
 }
 
-// Helper Function: Mencocokkan data cuaca dari tabel weather
 func (s *activityService) getWeatherStatus(areaCode string, date time.Time) string {
 	var weather models.Weather
 
-	// GORM akan otomatis menangani konversi time.Time ke format DB yang sesuai
 	err := s.db.Where("area_code = ? AND local_datetime <= ?", areaCode, date).
 		Order("local_datetime DESC").
 		First(&weather).Error
@@ -71,21 +68,17 @@ func (s *activityService) getWeatherStatus(areaCode string, date time.Time) stri
 	return "Cuaca tidak diketahui (Silakan Sync data BMKG)"
 }
 
-// internal/services/activity_service.go
 
 func (s *activityService) GetAllActivities(search, sortBy, order string) ([]models.Activity, error) {
     var activities []models.Activity
     
-    // Tambahkan .Preload("Wilayah") agar nama lokasi muncul
     dbQuery := s.db.Model(&models.Activity{}).Preload("Wilayah")
 
     if search != "" {
         searchText := "%" + search + "%"
-        // Kita juga bisa mencari berdasarkan nama wilayah sekarang (Join diperlukan jika ingin search loc)
         dbQuery = dbQuery.Where("name ILIKE ? OR weather_status ILIKE ?", searchText, searchText)
     }
 
-    // ... urusan sorting tetap sama ...
     if err := dbQuery.Order(sortBy + " " + order).Find(&activities).Error; err != nil {
         return nil, err
     }

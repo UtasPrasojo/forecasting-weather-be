@@ -13,7 +13,6 @@ type WeatherHandler struct {
 	WeatherService services.WeatherService
 }
 
-// NewWeatherHandler adalah Constructor untuk inisialisasi Handler
 func NewWeatherHandler(s services.WeatherService) *WeatherHandler {
 	return &WeatherHandler{WeatherService: s}
 }
@@ -58,8 +57,22 @@ func (h *WeatherHandler) HandleSync(w http.ResponseWriter, r *http.Request) {
 func (h *WeatherHandler) GetAllWeather(w http.ResponseWriter, r *http.Request) {
 	var weathers []models.Weather
 
-	// Menggunakan Preload untuk mengambil data dari tabel Wilayah (Join)
-	result := database.DB.Preload("Wilayah").Order("sync_time desc").Find(&weathers)
+	var last models.Weather
+	err := database.DB.Select("area_code, sync_time").Order("sync_time DESC").First(&last).Error
+
+	if err != nil {
+		writeJSON(w, http.StatusOK, []models.Weather{})
+		return
+	}
+
+	startTime := last.SyncTime.Add(-1 * time.Second)
+	endTime := last.SyncTime.Add(1 * time.Second)
+
+	result := database.DB.Preload("Wilayah").
+		Where("area_code = ?", last.AreaCode).
+		Where("sync_time BETWEEN ? AND ?", startTime, endTime). // Menggunakan BETWEEN
+		Order("local_datetime ASC").
+		Find(&weathers)
 
 	if result.Error != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "Gagal ambil data"})
@@ -109,16 +122,32 @@ func (h *WeatherHandler) DeleteWeather(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {object}  map[string]interface{} "Contoh: {pie_chart: [], column_chart: []}"
 // @Router       /api/weather/dashboard [get]
 func (h *WeatherHandler) GetWeatherStats(w http.ResponseWriter, r *http.Request) {
+	var last models.Weather
+	err := database.DB.Select("area_code, sync_time").Order("sync_time DESC").First(&last).Error
+
+	if err != nil {
+		writeJSON(w, http.StatusOK, map[string]interface{}{"pie_chart": []string{}, "column_chart": []string{}})
+		return
+	}
+
+	startTime := last.SyncTime.Add(-1 * time.Second)
+	endTime := last.SyncTime.Add(1 * time.Second)
+
 	type PieData struct {
 		Category string `json:"category"`
 		Total    int64  `json:"total"`
 	}
 	var pieStats []PieData
-	database.DB.Model(&models.Weather{}).Select("category, count(*) as total").Group("category").Scan(&pieStats)
+	database.DB.Model(&models.Weather{}).
+		Select("category, count(*) as total").
+		Where("area_code = ? AND sync_time BETWEEN ? AND ?", last.AreaCode, startTime, endTime).
+		Group("category").
+		Scan(&pieStats)
 
 	var columnStats []map[string]interface{}
 	database.DB.Model(&models.Weather{}).
 		Select("DATE(local_datetime) as day, AVG(t) as avg_temp").
+		Where("area_code = ? AND sync_time BETWEEN ? AND ?", last.AreaCode, startTime, endTime).
 		Group("DATE(local_datetime)").
 		Order("day ASC").
 		Scan(&columnStats)
@@ -126,6 +155,7 @@ func (h *WeatherHandler) GetWeatherStats(w http.ResponseWriter, r *http.Request)
 	response := map[string]interface{}{
 		"pie_chart":    pieStats,
 		"column_chart": columnStats,
+		"area_name":    last.AreaCode, 
 	}
 
 	writeJSON(w, http.StatusOK, response)

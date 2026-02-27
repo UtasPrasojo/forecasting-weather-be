@@ -16,8 +16,6 @@ func main() {
 	}
 
 	database.InitDB(setting)
-	// log.Println("Memulai seeding data wilayah...")
-	// database.SeedWilayah("./internal/migration/wilayah.csv")
 
 	router := routes.SetupRoutes()
 

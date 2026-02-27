@@ -2,7 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"project-telkom-sigma/internal/models"
 	"project-telkom-sigma/internal/services"
+	"regexp"
 )
 
 type WilayahHandler struct {
@@ -27,5 +29,15 @@ func (h *WilayahHandler) GetWilayah(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "Gagal mengambil data wilayah"})
 		return
 	}
-	writeJSON(w, http.StatusOK, data)
+
+	re := regexp.MustCompile(`^\d{2}\.\d{2}\.\d{2}\.\d{4}$`)
+
+	var filteredData []models.Wilayah 
+	for _, v := range data {
+		if re.MatchString(v.Code) { 
+			filteredData = append(filteredData, v)
+		}
+	}
+
+	writeJSON(w, http.StatusOK, filteredData)
 }

@@ -36,13 +36,12 @@ func SetupRoutes() http.Handler {
 	mux.HandleFunc("DELETE /api/weather/delete", weatherHandler.DeleteWeather)
 	mux.HandleFunc("GET /api/weather/dashboard", weatherHandler.GetWeatherStats)
 
-	activityHandler := handler.NewActivityHandler()
+	activityHandler := handler.NewActivityHandler(weatherService)
 
 	mux.HandleFunc("POST /api/activity", activityHandler.CreateActivity)
 	mux.HandleFunc("GET /api/activity", activityHandler.GetAllActivities)
 	mux.HandleFunc("PUT /api/activity/update", activityHandler.UpdateActivity)
 	mux.HandleFunc("DELETE /api/activity/delete", activityHandler.DeleteActivity)
-
 
 	wilayahRepo := repositories.NewWilayahRepository(database.DB)
 	wilayahService := services.NewWilayahService(wilayahRepo)

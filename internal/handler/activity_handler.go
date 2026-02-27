@@ -2,18 +2,21 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"project-telkom-sigma/internal/database"
 	"project-telkom-sigma/internal/models"
+	"project-telkom-sigma/internal/services"
+	"time"
 )
 
-// ActivityHandler struct untuk membungkus dependensi (jika nanti pakai Service)
-type ActivityHandler struct{}
+type ActivityHandler struct {
+	WeatherService services.WeatherService 
+}
 
-// NewActivityHandler constructor
-func NewActivityHandler() *ActivityHandler {
-	return &ActivityHandler{}
+func NewActivityHandler(s services.WeatherService) *ActivityHandler {
+	return &ActivityHandler{WeatherService: s}
 }
 
 // CreateActivity godoc
@@ -33,20 +36,43 @@ func (h *ActivityHandler) CreateActivity(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Mencocokkan status cuaca dari tabel weather berdasarkan area_code dan waktu terdekat
+	var lastWeather models.Weather
+	if err := database.DB.Order("sync_time DESC").First(&lastWeather).Error; err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"message": "Belum ada data wilayah yang di-sync. Silakan lakukan Sync terlebih dahulu.",
+		})
+		return
+	}
+
+	input.AreaCode = lastWeather.AreaCode
+	log.Printf("Menggunakan wilayah otomatis dari Sync terakhir: %s", input.AreaCode)
+
 	var weather models.Weather
-	err := database.DB.Where("area_code = ? AND local_datetime <= ?", input.AreaCode, input.ActivityDate).
-		Order("local_datetime DESC").
-		First(&weather).Error
+	findWeather := func(code string, date time.Time) error {
+		return database.DB.Where("area_code = ?", code).
+			Order(fmt.Sprintf("ABS(EXTRACT(EPOCH FROM (local_datetime - '%s')))",
+				date.Format("2006-01-02 15:04:05"))).
+			First(&weather).Error
+	}
+
+	err := findWeather(input.AreaCode, input.ActivityDate)
 
 	if err == nil {
 		input.WeatherStatus = weather.WeatherDesc
+		log.Printf("Cuaca ditemukan: %s", weather.WeatherDesc)
 	} else {
-		log.Printf("input ki", input)
-		input.WeatherStatus = "Cuaca tidak diketahui (Belum Sync)"
+		log.Printf("Data cuaca jam tersebut tidak ada, mencoba Sync ulang area: %s", input.AreaCode)
+		h.WeatherService.SyncWeather(input.AreaCode)
+
+		if errRetry := findWeather(input.AreaCode, input.ActivityDate); errRetry == nil {
+			input.WeatherStatus = weather.WeatherDesc
+		} else {
+			input.WeatherStatus = "Cuaca tidak diketahui (Gagal Sync Ulang)"
+		}
 	}
 
 	if err := database.DB.Create(&input).Error; err != nil {
+		log.Printf("Error DB: %v", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "Gagal menyimpan kegiatan"})
 		return
 	}
@@ -73,20 +99,18 @@ func (h *ActivityHandler) GetAllActivities(w http.ResponseWriter, r *http.Reques
 	sortBy := query.Get("sort_by")
 	order := query.Get("order")
 
-	dbQuery := database.DB.Model(&models.Activity{})
+	dbQuery := database.DB.Model(&models.Activity{}).Preload("Wilayah")
 
-	// Fitur Pencarian
 	if search != "" {
 		searchText := "%" + search + "%"
 		dbQuery = dbQuery.Where("name ILIKE ? OR weather_status ILIKE ?", searchText, searchText)
 	}
 
-	// Default Sorting
 	if sortBy == "" {
 		sortBy = "activity_date"
 	}
 	if order == "" || (order != "asc" && order != "desc") {
-		order = "desc" // Default terbaru dulu
+		order = "desc"
 	}
 
 	err := dbQuery.Order(sortBy + " " + order).Find(&activities).Error
@@ -129,25 +153,37 @@ func (h *ActivityHandler) UpdateActivity(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Update Field
 	activity.Name = input.Name
 	activity.AreaCode = input.AreaCode
 	activity.ActivityDate = input.ActivityDate
 
-	// Sinkronisasi ulang cuaca karena mungkin tanggal/lokasi berubah
 	var weather models.Weather
-	err := database.DB.Where("area_code = ? AND local_datetime <= ?", activity.AreaCode, activity.ActivityDate).
-		Order("local_datetime DESC").
+	err := database.DB.Where("area_code = ?", activity.AreaCode).
+		Order(fmt.Sprintf("ABS(EXTRACT(EPOCH FROM (local_datetime - '%s')))",
+			activity.ActivityDate.Format("2006-01-02 15:04:05"))).
 		First(&weather).Error
 
 	if err == nil {
 		activity.WeatherStatus = weather.WeatherDesc
 	} else {
-		activity.WeatherStatus = "Cuaca tidak diketahui (Belum Sync)"
+		log.Printf("Data tidak ada, mencoba sync ulang untuk area: %s", activity.AreaCode)
+		h.WeatherService.SyncWeather(activity.AreaCode)
+
+		database.DB.Where("area_code = ?", activity.AreaCode).
+			Order(fmt.Sprintf("ABS(EXTRACT(EPOCH FROM (local_datetime - '%s')))",
+				activity.ActivityDate.Format("2006-01-02 15:04:05"))).
+			First(&weather)
+
+		if weather.WeatherDesc != "" {
+			activity.WeatherStatus = weather.WeatherDesc
+		} else {
+			activity.WeatherStatus = "Cuaca tidak diketahui (Belum Sync)"
+		}
 	}
 
 	if err := database.DB.Save(&activity).Error; err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "Gagal memperbarui kegiatan"})
+		log.Printf("Gagal update DB: %v", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "Gagal menyimpan perubahan ke database"})
 		return
 	}
 
