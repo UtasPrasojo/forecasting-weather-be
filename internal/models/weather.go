@@ -3,25 +3,26 @@ package models
 import "time"
 
 type Weather struct {
-	ID            uint      `gorm:"primaryKey" json:"id"`
-	AreaCode      string    `gorm:"uniqueIndex:idx_weather_unique"`
-	UtcDatetime   time.Time `gorm:"uniqueIndex:idx_weather_unique"`
+	ID       uint   `gorm:"primaryKey" json:"id"`
+	AreaCode string `gorm:"uniqueIndex:idx_weather_unique" json:"area_code"`
+
+	Wilayah Wilayah `gorm:"foreignKey:AreaCode;references:Code" json:"wilayah"`
+
+	UtcDatetime   time.Time `gorm:"uniqueIndex:idx_weather_unique" json:"utc_datetime"`
 	LocalDatetime time.Time `json:"local_datetime"`
 
-	// Data Cuaca (sesuai parameter BMKG)
-	T             float64 `json:"t"`               // Suhu
-	Hu            int     `json:"hu"`              // Kelembapan
-	WeatherDesc   string  `json:"weather_desc"`    // Kondisi (Indo)
-	WeatherDescEn string  `json:"weather_desc_en"` // Kondisi (English)
-	Ws            float64 `json:"ws"`              // Kecepatan Angin
-	Wd            string  `json:"wd"`              // Arah Angin
-	Tcc           int     `json:"tcc"`             // Tutupan Awan
-	VsText        string  `json:"vs_text"`         // Jarak Pandang
+	T             float64 `json:"t"`
+	Hu            int     `json:"hu"`
+	WeatherDesc   string  `json:"weather_desc"`
+	WeatherDescEn string  `json:"weather_desc_en"`
+	Ws            float64 `json:"ws"`
+	Wd            string  `json:"wd"`
+	Tcc           int     `json:"tcc"`
+	VsText        string  `json:"vs_text"`
 
-	// Kriteria Tugas: Kategori & Sync Time
-	Category     string    `gorm:"index" json:"category"` // Kita isi dari weather_desc (Cerah, Hujan, dll)
+	Category     string    `gorm:"index" json:"category"`
 	AnalysisDate time.Time `json:"analysis_date"`
-	SyncTime     time.Time `json:"sync_time"` // Kapan kita menembak API
+	SyncTime     time.Time `json:"sync_time"`
 }
 type BMKGResponse struct {
 	Data []struct {

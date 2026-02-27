@@ -1,14 +1,18 @@
+// internal/models/activity.go
 package models
 
 import "time"
 
 type Activity struct {
-	ID            uint      `gorm:"primaryKey"`
-	Name          string    `json:"name"`           // Nama kegiatan (misal: "Meeting Telkom")
-	AreaCode      string    `json:"area_code"`      // Relasi ke Wilayah.Code (adm4)
-	ActivityDate  time.Time `json:"activity_date"`  // Tanggal dan Jam kegiatan
-	WeatherStatus string    `json:"weather_status"` // Akan diisi otomatis oleh sistem
-	SyncTime      time.Time `json:"sync_time"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+    ID           uint      `gorm:"primaryKey" json:"id"`
+    Name         string    `json:"name" example:"Rapat Koordinasi"`
+    AreaCode     string    `json:"area_code" example:"31.71.01.1001"`
+    
+    Wilayah      Wilayah   `gorm:"foreignKey:AreaCode;references:Code" json:"wilayah"`
+
+    ActivityDate time.Time `json:"activity_date" example:"2026-02-27T10:00:00Z"`
+
+    WeatherStatus string    `json:"weather_status" swaggerignore:"true"`
+    CreatedAt     time.Time `json:"created_at" swaggerignore:"true"`
+    UpdatedAt     time.Time `json:"updated_at" swaggerignore:"true"`
 }

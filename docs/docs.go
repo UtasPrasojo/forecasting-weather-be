@@ -392,6 +392,34 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/wilayah": {
+            "get": {
+                "description": "Mengambil data wilayah untuk dropdown search",
+                "tags": [
+                    "Wilayah"
+                ],
+                "summary": "Daftar Wilayah (ADM4)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cari kode atau nama wilayah",
+                        "name": "q",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Wilayah"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Endpoint untuk memastikan backend berjalan lancar",
@@ -421,32 +449,19 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "activity_date": {
-                    "description": "Tanggal dan Jam kegiatan",
-                    "type": "string"
+                    "type": "string",
+                    "example": "2026-02-27T10:00:00Z"
                 },
                 "area_code": {
-                    "description": "Relasi ke Wilayah.Code (adm4)",
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "31.71.01.1001"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "name": {
-                    "description": "Nama kegiatan (misal: \"Meeting Telkom\")",
-                    "type": "string"
-                },
-                "sync_time": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "weather_status": {
-                    "description": "Akan diisi otomatis oleh sistem",
-                    "type": "string"
+                    "type": "string",
+                    "example": "Rapat Koordinasi"
                 }
             }
         },
@@ -509,18 +524,35 @@ const docTemplate = `{
                     "type": "number"
                 }
             }
+        },
+        "models.Wilayah": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "loc": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "API Analitik Publik",
-	Description:      "Backend service untuk konsumsi API dan Dashboard Analitik.",
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

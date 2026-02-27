@@ -1,26 +1,16 @@
-basePath: /
 definitions:
   models.Activity:
     properties:
       activity_date:
-        description: Tanggal dan Jam kegiatan
+        example: "2026-02-27T10:00:00Z"
         type: string
       area_code:
-        description: Relasi ke Wilayah.Code (adm4)
-        type: string
-      created_at:
+        example: 31.71.01.1001
         type: string
       id:
         type: integer
       name:
-        description: 'Nama kegiatan (misal: "Meeting Telkom")'
-        type: string
-      sync_time:
-        type: string
-      updated_at:
-        type: string
-      weather_status:
-        description: Akan diisi otomatis oleh sistem
+        example: Rapat Koordinasi
         type: string
     type: object
   models.Weather:
@@ -66,12 +56,19 @@ definitions:
         description: Kecepatan Angin
         type: number
     type: object
-host: localhost:8080
+  models.Wilayah:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      loc:
+        type: string
+      updated_at:
+        type: string
+    type: object
 info:
   contact: {}
-  description: Backend service untuk konsumsi API dan Dashboard Analitik.
-  title: API Analitik Publik
-  version: "1.0"
 paths:
   /api/activity:
     get:
@@ -324,6 +321,24 @@ paths:
       summary: Update Data Cuaca
       tags:
       - Weather
+  /api/wilayah:
+    get:
+      description: Mengambil data wilayah untuk dropdown search
+      parameters:
+      - description: Cari kode atau nama wilayah
+        in: query
+        name: q
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Wilayah'
+            type: array
+      summary: Daftar Wilayah (ADM4)
+      tags:
+      - Wilayah
   /health:
     get:
       description: Endpoint untuk memastikan backend berjalan lancar

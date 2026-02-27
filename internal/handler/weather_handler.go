@@ -57,11 +57,15 @@ func (h *WeatherHandler) HandleSync(w http.ResponseWriter, r *http.Request) {
 // @Router       /api/weather [get]
 func (h *WeatherHandler) GetAllWeather(w http.ResponseWriter, r *http.Request) {
 	var weathers []models.Weather
-	result := database.DB.Order("sync_time desc").Find(&weathers)
+
+	// Menggunakan Preload untuk mengambil data dari tabel Wilayah (Join)
+	result := database.DB.Preload("Wilayah").Order("sync_time desc").Find(&weathers)
+
 	if result.Error != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "Gagal ambil data"})
 		return
 	}
+
 	writeJSON(w, http.StatusOK, weathers)
 }
 
