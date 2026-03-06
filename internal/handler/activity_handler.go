@@ -12,7 +12,7 @@ import (
 )
 
 type ActivityHandler struct {
-	WeatherService services.WeatherService 
+	WeatherService services.WeatherService
 }
 
 func NewActivityHandler(s services.WeatherService) *ActivityHandler {
@@ -101,21 +101,40 @@ func (h *ActivityHandler) GetAllActivities(w http.ResponseWriter, r *http.Reques
 
 	dbQuery := database.DB.Model(&models.Activity{}).Preload("Wilayah")
 
+	// 🔎 SEARCH
 	if search != "" {
 		searchText := "%" + search + "%"
-		dbQuery = dbQuery.Where("name ILIKE ? OR weather_status ILIKE ?", searchText, searchText)
+		dbQuery = dbQuery.Where(
+			"name ILIKE ? OR weather_status ILIKE ?",
+			searchText, searchText,
+		)
 	}
 
-	if sortBy == "" {
+	// 🔐 WHITELIST SORTABLE COLUMNS
+	allowedSortFields := map[string]bool{
+		"name":           true,
+		"activity_date":  true,
+		"weather_status": true,
+		"created_at":     true,
+	}
+
+	if !allowedSortFields[sortBy] {
 		sortBy = "activity_date"
 	}
-	if order == "" || (order != "asc" && order != "desc") {
+
+	// 🔁 VALIDASI ORDER
+	if order != "asc" && order != "desc" {
 		order = "desc"
 	}
 
-	err := dbQuery.Order(sortBy + " " + order).Find(&activities).Error
+	err := dbQuery.
+		Order(sortBy + " " + order).
+		Find(&activities).Error
+
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "Gagal mengambil data kegiatan"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"message": "Gagal mengambil data kegiatan",
+		})
 		return
 	}
 
@@ -153,9 +172,16 @@ func (h *ActivityHandler) UpdateActivity(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+
 	activity.Name = input.Name
-	activity.AreaCode = input.AreaCode
-	activity.ActivityDate = input.ActivityDate
+
+	if input.AreaCode != "" {
+		activity.AreaCode = input.AreaCode
+	}
+
+	if !input.ActivityDate.IsZero() {
+		activity.ActivityDate = input.ActivityDate
+	}
 
 	var weather models.Weather
 	err := database.DB.Where("area_code = ?", activity.AreaCode).
