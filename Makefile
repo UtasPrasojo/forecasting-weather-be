@@ -16,3 +16,14 @@ watch:
 			exit 1; \
 		fi; \
 	fi
+
+	# Generate Swagger Documentation
+swagger:
+	@echo "Generating Swagger documentation..."
+	@swag init -g cmd/api/main.go --parseDependency --output ./docs
+	@echo "Swagger documentation generated successfully."
+
+# Gabungkan dengan build (opsional)
+build: swagger
+	@echo "Building..."
+	@go build -o $(BINARY) cmd/api/main.go

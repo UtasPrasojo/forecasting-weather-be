@@ -17,57 +17,28 @@ const docTemplate = `{
     "paths": {
         "/api/activity": {
             "get": {
-                "description": "Mengambil semua daftar kegiatan dengan fitur pencarian dan pengurutan",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil daftar kegiatan milik user yang sedang login",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Activity"
                 ],
-                "summary": "Daftar Semua Kegiatan",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Cari berdasarkan nama atau status cuaca",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Kolom pengurutan (contoh: activity_date, name)",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Urutan data (asc/desc)",
-                        "name": "order",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Activity"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
+                "summary": "Daftar Semua Kegiatan User",
+                "responses": {}
             },
             "post": {
-                "description": "Membuat rencana kegiatan baru dan otomatis mencocokkan status cuaca berdasarkan data BMKG yang tersedia",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Membuat rencana kegiatan baru milik user yang sedang login",
                 "consumes": [
                     "application/json"
                 ],
@@ -85,7 +56,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Activity"
+                            "$ref": "#/definitions/project-telkom-sigma_internal_models.Activity"
                         }
                     }
                 ],
@@ -93,7 +64,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Activity"
+                            "$ref": "#/definitions/project-telkom-sigma_internal_models.Activity"
                         }
                     },
                     "400": {
@@ -110,23 +81,70 @@ const docTemplate = `{
         },
         "/api/activity/delete": {
             "delete": {
-                "description": "Menghapus data kegiatan berdasarkan ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Menghapus kegiatan milik user yang sedang login",
                 "tags": [
                     "Activity"
                 ],
                 "summary": "Hapus Kegiatan",
+                "responses": {}
+            }
+        },
+        "/api/activity/update": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengubah data kegiatan milik user yang sedang login",
+                "tags": [
+                    "Activity"
+                ],
+                "summary": "Perbarui Kegiatan",
+                "responses": {}
+            }
+        },
+        "/api/login": {
+            "post": {
+                "description": "Autentikasi user dan mendapatkan JWT Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User Login",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "ID Kegiatan",
-                        "name": "id",
-                        "in": "query",
-                        "required": true
+                        "description": "Data Login",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/project-telkom-sigma_internal_models.LoginRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -137,9 +155,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/activity/update": {
-            "put": {
-                "description": "Mengubah data kegiatan dan memperbarui status cuaca secara otomatis",
+        "/api/register": {
+            "post": {
+                "description": "Mendaftarkan user baru ke dalam sistem",
                 "consumes": [
                     "application/json"
                 ],
@@ -147,36 +165,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Activity"
+                    "Auth"
                 ],
-                "summary": "Perbarui Kegiatan",
+                "summary": "User Register",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "ID Kegiatan yang akan diubah",
-                        "name": "id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "description": "Data JSON Kegiatan baru",
-                        "name": "activity",
+                        "description": "Data User (Username \u0026 Password)",
+                        "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Activity"
+                            "$ref": "#/definitions/project-telkom-sigma_internal_models.User"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Activity"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -184,8 +189,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -212,7 +217,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Weather"
+                                "$ref": "#/definitions/project-telkom-sigma_internal_models.Weather"
                             }
                         }
                     },
@@ -375,7 +380,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Weather"
+                            "$ref": "#/definitions/project-telkom-sigma_internal_models.Weather"
                         }
                     }
                 ],
@@ -413,7 +418,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Wilayah"
+                                "$ref": "#/definitions/project-telkom-sigma_internal_models.Wilayah"
                             }
                         }
                     }
@@ -445,7 +450,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.Activity": {
+        "project-telkom-sigma_internal_models.Activity": {
             "type": "object",
             "properties": {
                 "activity_date": {
@@ -462,24 +467,66 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Rapat Koordinasi"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "wilayah": {
+                    "$ref": "#/definitions/project-telkom-sigma_internal_models.Wilayah"
                 }
             }
         },
-        "models.Weather": {
+        "project-telkom-sigma_internal_models.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "password123"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "johndoe"
+                }
+            }
+        },
+        "project-telkom-sigma_internal_models.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-03-07T00:00:00Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret123"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-03-07T00:00:00Z"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "johndoe"
+                }
+            }
+        },
+        "project-telkom-sigma_internal_models.Weather": {
             "type": "object",
             "properties": {
                 "analysis_date": {
                     "type": "string"
                 },
-                "areaCode": {
+                "area_code": {
                     "type": "string"
                 },
                 "category": {
-                    "description": "Kriteria Tugas: Kategori \u0026 Sync Time",
                     "type": "string"
                 },
                 "hu": {
-                    "description": "Kelembapan",
                     "type": "integer"
                 },
                 "id": {
@@ -489,43 +536,38 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sync_time": {
-                    "description": "Kapan kita menembak API",
                     "type": "string"
                 },
                 "t": {
-                    "description": "Data Cuaca (sesuai parameter BMKG)",
                     "type": "number"
                 },
                 "tcc": {
-                    "description": "Tutupan Awan",
                     "type": "integer"
                 },
-                "utcDatetime": {
+                "utc_datetime": {
                     "type": "string"
                 },
                 "vs_text": {
-                    "description": "Jarak Pandang",
                     "type": "string"
                 },
                 "wd": {
-                    "description": "Arah Angin",
                     "type": "string"
                 },
                 "weather_desc": {
-                    "description": "Kondisi (Indo)",
                     "type": "string"
                 },
                 "weather_desc_en": {
-                    "description": "Kondisi (English)",
                     "type": "string"
                 },
+                "wilayah": {
+                    "$ref": "#/definitions/project-telkom-sigma_internal_models.Wilayah"
+                },
                 "ws": {
-                    "description": "Kecepatan Angin",
                     "type": "number"
                 }
             }
         },
-        "models.Wilayah": {
+        "project-telkom-sigma_internal_models.Wilayah": {
             "type": "object",
             "properties": {
                 "code": {
@@ -542,17 +584,24 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "API Sistem Informasi Telkom Sigma",
+	Description:      "Dokumentasi API untuk Proyek Internal",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

@@ -24,7 +24,7 @@ func InitDB(cfg *configs.Setting) {
 		log.Fatal("Gagal koneksi database:", err)
 	}
 
-	err = db.AutoMigrate(&models.Wilayah{}, &models.Weather{}, &models.Activity{})
+	err = db.AutoMigrate(&models.Wilayah{}, &models.Weather{}, &models.Activity{}, &models.User{})
 	if err != nil {
 		log.Fatal("Gagal migrasi database:", err)
 	}

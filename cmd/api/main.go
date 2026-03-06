@@ -9,6 +9,18 @@ import (
 	"project-telkom-sigma/internal/routes"
 )
 
+// @title           API Sistem Informasi Telkom Sigma
+// @version         1.0
+// @description     Dokumentasi API untuk Proyek Internal
+// @host            localhost:8080
+// @BasePath        /api
+
+// Tambahkan blok di bawah ini:
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @scheme bearer
+// @bearerFormat JWT
 func main() {
 	setting, err := configs.NewSetting()
 	if err != nil {

@@ -1,5 +1,6 @@
+basePath: /api
 definitions:
-  models.Activity:
+  project-telkom-sigma_internal_models.Activity:
     properties:
       activity_date:
         example: "2026-02-27T10:00:00Z"
@@ -12,51 +13,74 @@ definitions:
       name:
         example: Rapat Koordinasi
         type: string
+      user_id:
+        type: integer
+      wilayah:
+        $ref: '#/definitions/project-telkom-sigma_internal_models.Wilayah'
     type: object
-  models.Weather:
+  project-telkom-sigma_internal_models.LoginRequest:
+    properties:
+      password:
+        example: password123
+        type: string
+      username:
+        example: johndoe
+        type: string
+    type: object
+  project-telkom-sigma_internal_models.User:
+    properties:
+      created_at:
+        example: "2026-03-07T00:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      password:
+        example: secret123
+        type: string
+      updated_at:
+        example: "2026-03-07T00:00:00Z"
+        type: string
+      username:
+        example: johndoe
+        type: string
+    type: object
+  project-telkom-sigma_internal_models.Weather:
     properties:
       analysis_date:
         type: string
-      areaCode:
+      area_code:
         type: string
       category:
-        description: 'Kriteria Tugas: Kategori & Sync Time'
         type: string
       hu:
-        description: Kelembapan
         type: integer
       id:
         type: integer
       local_datetime:
         type: string
       sync_time:
-        description: Kapan kita menembak API
         type: string
       t:
-        description: Data Cuaca (sesuai parameter BMKG)
         type: number
       tcc:
-        description: Tutupan Awan
         type: integer
-      utcDatetime:
+      utc_datetime:
         type: string
       vs_text:
-        description: Jarak Pandang
         type: string
       wd:
-        description: Arah Angin
         type: string
       weather_desc:
-        description: Kondisi (Indo)
         type: string
       weather_desc_en:
-        description: Kondisi (English)
         type: string
+      wilayah:
+        $ref: '#/definitions/project-telkom-sigma_internal_models.Wilayah'
       ws:
-        description: Kecepatan Angin
         type: number
     type: object
-  models.Wilayah:
+  project-telkom-sigma_internal_models.Wilayah:
     properties:
       code:
         type: string
@@ -67,129 +91,131 @@ definitions:
       updated_at:
         type: string
     type: object
+host: localhost:8080
 info:
   contact: {}
+  description: Dokumentasi API untuk Proyek Internal
+  title: API Sistem Informasi Telkom Sigma
+  version: "1.0"
 paths:
   /api/activity:
     get:
-      description: Mengambil semua daftar kegiatan dengan fitur pencarian dan pengurutan
-      parameters:
-      - description: Cari berdasarkan nama atau status cuaca
-        in: query
-        name: search
-        type: string
-      - description: 'Kolom pengurutan (contoh: activity_date, name)'
-        in: query
-        name: sort_by
-        type: string
-      - description: Urutan data (asc/desc)
-        in: query
-        name: order
-        type: string
+      description: Mengambil daftar kegiatan milik user yang sedang login
       produces:
       - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Activity'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Daftar Semua Kegiatan
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Daftar Semua Kegiatan User
       tags:
       - Activity
     post:
       consumes:
       - application/json
-      description: Membuat rencana kegiatan baru dan otomatis mencocokkan status cuaca
-        berdasarkan data BMKG yang tersedia
+      description: Membuat rencana kegiatan baru milik user yang sedang login
       parameters:
       - description: Data JSON Kegiatan
         in: body
         name: activity
         required: true
         schema:
-          $ref: '#/definitions/models.Activity'
+          $ref: '#/definitions/project-telkom-sigma_internal_models.Activity'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Activity'
+            $ref: '#/definitions/project-telkom-sigma_internal_models.Activity'
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Buat Rencana Kegiatan
       tags:
       - Activity
   /api/activity/delete:
     delete:
-      description: Menghapus data kegiatan berdasarkan ID
-      parameters:
-      - description: ID Kegiatan
-        in: query
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+      description: Menghapus kegiatan milik user yang sedang login
+      responses: {}
+      security:
+      - BearerAuth: []
       summary: Hapus Kegiatan
       tags:
       - Activity
   /api/activity/update:
     put:
+      description: Mengubah data kegiatan milik user yang sedang login
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Perbarui Kegiatan
+      tags:
+      - Activity
+  /api/login:
+    post:
       consumes:
       - application/json
-      description: Mengubah data kegiatan dan memperbarui status cuaca secara otomatis
+      description: Autentikasi user dan mendapatkan JWT Token
       parameters:
-      - description: ID Kegiatan yang akan diubah
-        in: query
-        name: id
-        required: true
-        type: string
-      - description: Data JSON Kegiatan baru
+      - description: Data Login
         in: body
-        name: activity
+        name: login
         required: true
         schema:
-          $ref: '#/definitions/models.Activity'
+          $ref: '#/definitions/project-telkom-sigma_internal_models.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Activity'
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User Login
+      tags:
+      - Auth
+  /api/register:
+    post:
+      consumes:
+      - application/json
+      description: Mendaftarkan user baru ke dalam sistem
+      parameters:
+      - description: Data User (Username & Password)
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/project-telkom-sigma_internal_models.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Perbarui Kegiatan
+      summary: User Register
       tags:
-      - Activity
+      - Auth
   /api/weather:
     get:
       description: Mengambil semua data cuaca yang telah di-sync, diurutkan berdasarkan
@@ -201,7 +227,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Weather'
+              $ref: '#/definitions/project-telkom-sigma_internal_models.Weather'
             type: array
         "500":
           description: Internal Server Error
@@ -310,7 +336,7 @@ paths:
         name: weather
         required: true
         schema:
-          $ref: '#/definitions/models.Weather'
+          $ref: '#/definitions/project-telkom-sigma_internal_models.Weather'
       responses:
         "200":
           description: OK
@@ -334,7 +360,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Wilayah'
+              $ref: '#/definitions/project-telkom-sigma_internal_models.Wilayah'
             type: array
       summary: Daftar Wilayah (ADM4)
       tags:
@@ -354,4 +380,9 @@ paths:
       summary: Cek Status Server
       tags:
       - System
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
